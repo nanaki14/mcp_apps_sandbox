@@ -139,7 +139,39 @@ registerAppResource(
 // ─── HTTP Server (Hono for non-MCP routes + raw Node.js for MCP) ─────────────
 
 const honoApp = new Hono();
+
 honoApp.get("/health", (c) => c.json({ status: "ok", totalResponses }));
+
+honoApp.get("/api/survey", (c) =>
+  c.json({ survey, results, totalResponses }),
+);
+
+honoApp.post("/api/submit", async (c) => {
+  const { responses } = await c.req.json<{
+    responses: Array<{ questionId: string; answer: string | string[] }>;
+  }>();
+  for (const response of responses) {
+    const result = results.find((r) => r.questionId === response.questionId);
+    if (!result) continue;
+    const answers = Array.isArray(response.answer)
+      ? response.answer
+      : [response.answer];
+    for (const answer of answers) {
+      if (!answer) continue;
+      result.answers[answer] = (result.answers[answer] ?? 0) + 1;
+    }
+  }
+  totalResponses++;
+  return c.json({ survey, results, totalResponses });
+});
+
+honoApp.get("/", async (c) => {
+  const html = await fs.readFile(
+    path.join(__dirname, "dist", "web.html"),
+    "utf-8",
+  );
+  return c.html(html);
+});
 
 const honoListener = getRequestListener(honoApp.fetch);
 

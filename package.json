@@ -3,9 +3,11 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "build": "INPUT=mcp-app.html vite build",
+    "build": "INPUT=mcp-app.html vite build && INPUT=web.html vite build",
+    "build:mcp": "INPUT=mcp-app.html vite build",
+    "build:web": "INPUT=web.html vite build",
     "serve": "tsx server.ts",
-    "dev": "concurrently \"pnpm build -- --watch\" \"pnpm serve\"",
+    "dev": "concurrently \"pnpm build:web -- --watch\" \"pnpm serve\"",
     "lint": "oxlint .",
     "format": "oxfmt ."
   },

@@ -42,6 +42,15 @@ MCP Apps を使ってチャット内にインタラクティブな UI を表示�
             └── progress.tsx
 ```
 
+## 2 つの UI モード
+
+| モード | URL | 説明 |
+|---|---|---|
+| **Web UI** | `http://localhost:3001/` | ブラウザから直接アクセスできるスタンドアロン版 |
+| **MCP App** | Claude 経由 | チャット内に埋め込まれるインタラクティブ版 |
+
+Web UI は REST API (`/api/survey`, `/api/submit`) で動作し、MCP は不要です。
+
 ## MCP ツール
 
 | ツール名 | 説明 |
@@ -53,17 +62,25 @@ MCP Apps を使ってチャット内にインタラクティブな UI を表示�
 
 ```bash
 pnpm install
-pnpm build
+pnpm build        # MCP UI + Web UI を両方ビルド
+```
+
+個別にビルドする場合:
+
+```bash
+pnpm build:mcp    # MCP App のみ (dist/mcp-app.html)
+pnpm build:web    # Web UI のみ (dist/web.html)
 ```
 
 ## 起動
 
 ```bash
 pnpm serve
-# → http://localhost:3001/mcp
+# → http://localhost:3001/      (Web UI)
+# → http://localhost:3001/mcp   (MCP エンドポイント)
 ```
 
-開発中は UI を watch ビルドしながらサーバーも同時起動できます。
+Web UI の開発中は watch ビルド + サーバー同時起動が便利です:
 
 ```bash
 pnpm dev
@@ -71,7 +88,32 @@ pnpm dev
 
 ## テスト方法
 
-### 1. ローカルで MCP エンドポイントを確認
+### 1. Web UI をブラウザで確認
+
+```bash
+pnpm build && pnpm serve
+# → http://localhost:3001/ をブラウザで開く
+```
+
+または REST API を直接叩く:
+
+```bash
+# アンケートデータ取得
+curl http://localhost:3001/api/survey | jq .
+
+# 回答を送信
+curl -s -X POST http://localhost:3001/api/submit \
+  -H "Content-Type: application/json" \
+  -d '{
+    "responses":[
+      {"questionId":"primary_lang","answer":"TypeScript"},
+      {"questionId":"frameworks","answer":["React","Hono"]},
+      {"questionId":"satisfaction","answer":"5"}
+    ]
+  }' | jq '.totalResponses'
+```
+
+### 2. ローカルで MCP エンドポイントを確認
 
 サーバー起動後、以下のコマンドで動作を確認できます。
 
