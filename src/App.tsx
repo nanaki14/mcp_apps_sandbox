@@ -1,12 +1,10 @@
 import { useState } from "react";
 import { useApp } from "@modelcontextprotocol/ext-apps/react";
 import { surveyDataSchema, type ResponseItem, type SurveyData } from "./lib/schema";
-import { SurveyForm } from "./components/SurveyForm";
-import { ResultsDashboard } from "./components/ResultsDashboard";
+import { SurveyRenderer } from "./components/SurveyRenderer";
 
 export function App() {
   const [surveyData, setSurveyData] = useState<SurveyData | null>(null);
-  const [submitted, setSubmitted] = useState(false);
 
   const { app, isConnected, error } = useApp({
     appInfo: { name: "Survey App", version: "1.0.0" },
@@ -16,8 +14,7 @@ export function App() {
         const text = result.content?.find((c) => c.type === "text")?.text;
         if (!text) return;
         try {
-          const parsed = surveyDataSchema.parse(JSON.parse(text));
-          setSurveyData(parsed);
+          setSurveyData(surveyDataSchema.parse(JSON.parse(text)));
         } catch {}
       };
     },
@@ -32,9 +29,7 @@ export function App() {
     const text = result.content?.find((c) => c.type === "text")?.text;
     if (!text) return;
     try {
-      const parsed = surveyDataSchema.parse(JSON.parse(text));
-      setSurveyData(parsed);
-      setSubmitted(true);
+      setSurveyData(surveyDataSchema.parse(JSON.parse(text)));
     } catch {}
   };
 
@@ -70,19 +65,7 @@ export function App() {
           {surveyData.survey.description}
         </p>
       </header>
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <SurveyForm
-          survey={surveyData.survey}
-          submitted={submitted}
-          onSubmit={handleSubmit}
-        />
-        <ResultsDashboard
-          survey={surveyData.survey}
-          results={surveyData.results}
-          totalResponses={surveyData.totalResponses}
-        />
-      </div>
+      <SurveyRenderer surveyData={surveyData} onSubmit={handleSubmit} />
     </div>
   );
 }

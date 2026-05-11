@@ -28,18 +28,6 @@ export const surveyDataSchema = z.object({
   totalResponses: z.number(),
 });
 
-export const formValuesSchema = z.object({
-  primary_lang: z.string({ required_error: "言語を選択してください" }),
-  frameworks: z
-    .array(z.string())
-    .min(1, "フレームワークを1つ以上選択してください"),
-  satisfaction: z
-    .number({ required_error: "評価を選択してください" })
-    .min(1)
-    .max(5),
-  comment: z.string().optional(),
-});
-
 export const responseItemSchema = z.object({
   questionId: z.string(),
   answer: z.union([z.string(), z.array(z.string())]),
@@ -49,5 +37,4 @@ export type Question = z.infer<typeof questionSchema>;
 export type Survey = z.infer<typeof surveySchema>;
 export type QuestionResult = z.infer<typeof questionResultSchema>;
 export type SurveyData = z.infer<typeof surveyDataSchema>;
-export type FormValues = z.infer<typeof formValuesSchema>;
 export type ResponseItem = z.infer<typeof responseItemSchema>;

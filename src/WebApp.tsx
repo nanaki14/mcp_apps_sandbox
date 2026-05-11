@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
 import { surveyDataSchema, type ResponseItem, type SurveyData } from "./lib/schema";
-import { ResultsDashboard } from "./components/ResultsDashboard";
-import { SurveyForm } from "./components/SurveyForm";
+import { SurveyRenderer } from "./components/SurveyRenderer";
 
 export function WebApp() {
   const [data, setData] = useState<SurveyData | null>(null);
-  const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -29,7 +27,6 @@ export function WebApp() {
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const json = await r.json();
     setData(surveyDataSchema.parse(json));
-    setSubmitted(true);
   };
 
   if (error) {
@@ -69,19 +66,7 @@ export function WebApp() {
           Web UI
         </span>
       </header>
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <SurveyForm
-          survey={data.survey}
-          submitted={submitted}
-          onSubmit={handleSubmit}
-        />
-        <ResultsDashboard
-          survey={data.survey}
-          results={data.results}
-          totalResponses={data.totalResponses}
-        />
-      </div>
+      <SurveyRenderer surveyData={data} onSubmit={handleSubmit} />
     </div>
   );
 }

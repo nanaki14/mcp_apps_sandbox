@@ -17,6 +17,12 @@ importers:
       '@hookform/resolvers':
         specifier: ^5.0.0
         version: 5.2.2(react-hook-form@7.75.0(react@19.2.6))
+      '@json-render/core':
+        specifier: ^0.19.0
+        version: 0.19.0(zod@3.25.76)
+      '@json-render/react':
+        specifier: ^0.19.0
+        version: 0.19.0(react@19.2.6)(zod@3.25.76)
       '@modelcontextprotocol/ext-apps':
         specifier: ^1.7.1
         version: 1.7.1(@modelcontextprotocol/sdk@1.29.0(zod@3.25.76))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(zod@3.25.76)
@@ -554,6 +560,16 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
+
+  '@json-render/core@0.19.0':
+    resolution: {integrity: sha512-vvcyZ+10EDZKbEyB1J2kXOGfDaiZR2LurZGSqi2r5STHyKr+Te85DWaBxTwRGgM7U1LtIvNx85BzzjElRKoAIg==}
+    peerDependencies:
+      zod: ^4.0.0
+
+  '@json-render/react@0.19.0':
+    resolution: {integrity: sha512-kTW6b6cSNRrlEfCUf/69SLoLn+CufC968ruge9tnQlp9pDTGG/SK8pgM541FdgwMFA4zm3s5mpM3G8rdODKc/A==}
+    peerDependencies:
+      react: ^19.2.3
 
   '@modelcontextprotocol/ext-apps@1.7.1':
     resolution: {integrity: sha512-J3WdG1A4JSSKnSWKyU+895dBVYBV2Utgtf7fUsUK45mlkETm53a/1DR6Pm3hUGKqLLQthZLmpxOg8VPzJi/lyg==}
@@ -2122,6 +2138,17 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  '@json-render/core@0.19.0(zod@3.25.76)':
+    dependencies:
+      zod: 3.25.76
+
+  '@json-render/react@0.19.0(react@19.2.6)(zod@3.25.76)':
+    dependencies:
+      '@json-render/core': 0.19.0(zod@3.25.76)
+      react: 19.2.6
+    transitivePeerDependencies:
+      - zod
 
   '@modelcontextprotocol/ext-apps@1.7.1(@modelcontextprotocol/sdk@1.29.0(zod@3.25.76))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(zod@3.25.76)':
     dependencies:
