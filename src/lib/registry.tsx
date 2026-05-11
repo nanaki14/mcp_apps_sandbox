@@ -323,4 +323,47 @@ export const registry: ComponentRegistry = {
   },
 
   Divider: () => <div className="border-t border-slate-100" />,
+
+  // ─── Dashboard components ──────────────────────────────────────────────────
+
+  DashboardLayout: ({ children }) => (
+    <div className="space-y-6">{children}</div>
+  ),
+
+  MetricsRow: ({ children }) => (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">{children}</div>
+  ),
+
+  MetricCard: ({ element }) => {
+    const p = element.props as {
+      label: string;
+      value: string | number;
+      unit?: string;
+    };
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <p className="text-xs font-medium tracking-wide text-slate-500 uppercase">
+            {p.label}
+          </p>
+          <div className="mt-2 flex items-baseline gap-1.5">
+            <span className="text-3xl font-bold text-slate-900">{p.value}</span>
+            {p.unit && (
+              <span className="text-sm text-slate-500">{p.unit}</span>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  },
+
+  ChartsSection: ({ children }) => (
+    <Card>
+      <CardHeader>
+        <CardTitle>📊 詳細集計</CardTitle>
+        <CardDescription>質問ごとの回答分布</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">{children}</CardContent>
+    </Card>
+  ),
 };

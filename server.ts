@@ -12,6 +12,7 @@ import {
 } from "@modelcontextprotocol/ext-apps/server";
 import { Hono } from "hono";
 import { getRequestListener } from "@hono/node-server";
+import { buildSurveySpec, buildDashboardSpec } from "./src/lib/survey-spec.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -61,8 +62,11 @@ const results: QuestionResult[] = survey.questions.map((q) => ({
 
 let totalResponses = 0;
 
-const toPayload = () =>
-  JSON.stringify({ survey, results, totalResponses });
+const toSurveySpecPayload = () =>
+  JSON.stringify({ spec: buildSurveySpec({ survey, results, totalResponses }) });
+
+const toDashboardSpecPayload = () =>
+  JSON.stringify({ spec: buildDashboardSpec({ survey, results, totalResponses }) });
 
 // ─── MCP Server ──────────────────────────────────────────────────────────────
 
@@ -83,7 +87,21 @@ registerAppTool(
     _meta: { ui: { resourceUri } },
   },
   async () => ({
-    content: [{ type: "text", text: toPayload() }],
+    content: [{ type: "text", text: toSurveySpecPayload() }],
+  }),
+);
+
+registerAppTool(
+  mcpServer,
+  "show_dashboard",
+  {
+    title: "ダッシュボードを表示",
+    description:
+      "回答データのアナリティクスダッシュボードを表示します。メトリクスカードとチャートで集計結果を視覚化します。",
+    _meta: { ui: { resourceUri } },
+  },
+  async () => ({
+    content: [{ type: "text", text: toDashboardSpecPayload() }],
   }),
 );
 
@@ -116,7 +134,7 @@ registerAppTool(
       }
     }
     totalResponses++;
-    return { content: [{ type: "text", text: toPayload() }] };
+    return { content: [{ type: "text", text: toSurveySpecPayload() }] };
   },
 );
 
@@ -143,7 +161,11 @@ const honoApp = new Hono();
 honoApp.get("/health", (c) => c.json({ status: "ok", totalResponses }));
 
 honoApp.get("/api/survey", (c) =>
-  c.json({ survey, results, totalResponses }),
+  c.json({ spec: buildSurveySpec({ survey, results, totalResponses }) }),
+);
+
+honoApp.get("/api/dashboard", (c) =>
+  c.json({ spec: buildDashboardSpec({ survey, results, totalResponses }) }),
 );
 
 honoApp.post("/api/submit", async (c) => {
@@ -162,7 +184,7 @@ honoApp.post("/api/submit", async (c) => {
     }
   }
   totalResponses++;
-  return c.json({ survey, results, totalResponses });
+  return c.json({ spec: buildSurveySpec({ survey, results, totalResponses }) });
 });
 
 honoApp.get("/", async (c) => {

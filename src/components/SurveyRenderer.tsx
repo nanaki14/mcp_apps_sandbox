@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useRef } from "react";
 import { JSONUIProvider, Renderer } from "@json-render/react";
-import { buildSurveySpec, INITIAL_STATE } from "../lib/survey-spec";
+import type { Spec } from "@json-render/react";
+import { INITIAL_STATE } from "../lib/survey-spec";
 import { registry } from "../lib/registry";
-import type { ResponseItem, SurveyData } from "../lib/schema";
+import type { ResponseItem } from "../lib/schema";
 
 interface SurveyRendererProps {
-  surveyData: SurveyData;
-  onSubmit: (responses: ResponseItem[]) => Promise<void>;
+  spec: Spec;
+  onSubmit?: (responses: ResponseItem[]) => Promise<void>;
 }
 
-export function SurveyRenderer({ surveyData, onSubmit }: SurveyRendererProps) {
+export function SurveyRenderer({ spec, onSubmit }: SurveyRendererProps) {
   const onSubmitRef = useRef(onSubmit);
   useEffect(() => {
     onSubmitRef.current = onSubmit;
@@ -40,13 +41,11 @@ export function SurveyRenderer({ surveyData, onSubmit }: SurveyRendererProps) {
             answer: (params.comment as string) ?? "",
           },
         ];
-        await onSubmitRef.current(responses);
+        await onSubmitRef.current?.(responses);
       },
     }),
     [],
   );
-
-  const spec = useMemo(() => buildSurveySpec(surveyData), [surveyData]);
 
   return (
     <JSONUIProvider
