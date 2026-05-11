@@ -10,7 +10,7 @@ MCP Apps を使ってチャット内にインタラクティブな UI を表示�
 | ビルド | Vite 6 + vite-plugin-singlefile |
 | UI フレームワーク | React 19 |
 | スタイリング | Tailwind CSS v4 |
-| UIプリミティブ | Base UI (`@base-ui/react`) |
+| UI プリミティブ | Base UI (`@base-ui/react`) |
 | フォーム | react-hook-form + zod |
 | MCP サーバー | @modelcontextprotocol/sdk + @modelcontextprotocol/ext-apps |
 | HTTP サーバー | Hono + Node.js http |
@@ -21,14 +21,17 @@ MCP Apps を使ってチャット内にインタラクティブな UI を表示�
 
 ```
 ├── server.ts              # MCP サーバー (Hono + Node.js http)
-├── mcp-app.html           # UI エントリーポイント (Vite input)
+├── mcp-app.html           # MCP App の Vite エントリーポイント
+├── web.html               # Web UI の Vite エントリーポイント
 ├── vite.config.ts
 ├── tsconfig.json
 ├── .oxlintrc.json
 └── src/
-    ├── mcp-app.tsx        # React エントリーポイント
+    ├── mcp-app.tsx        # MCP App エントリーポイント
+    ├── web-app.tsx        # Web UI エントリーポイント
     ├── styles.css         # Tailwind v4
-    ├── App.tsx            # useApp フックで MCP 接続管理
+    ├── App.tsx            # MCP 接続管理 (useApp フック)
+    ├── WebApp.tsx         # スタンドアロン Web UI (fetch ベース)
     ├── lib/
     │   ├── schema.ts      # Zod スキーマ定義
     │   └── utils.ts
@@ -49,7 +52,8 @@ MCP Apps を使ってチャット内にインタラクティブな UI を表示�
 | **Web UI** | `http://localhost:3001/` | ブラウザから直接アクセスできるスタンドアロン版 |
 | **MCP App** | Claude 経由 | チャット内に埋め込まれるインタラクティブ版 |
 
-Web UI は REST API (`/api/survey`, `/api/submit`) で動作し、MCP は不要です。
+Web UI は REST API (`/api/survey`, `/api/submit`) で動作し、MCP は不要です。  
+`SurveyForm` / `ResultsDashboard` コンポーネントは両モードで共用しています。
 
 ## MCP ツール
 
@@ -68,8 +72,8 @@ pnpm build        # MCP UI + Web UI を両方ビルド
 個別にビルドする場合:
 
 ```bash
-pnpm build:mcp    # MCP App のみ (dist/mcp-app.html)
-pnpm build:web    # Web UI のみ (dist/web.html)
+pnpm build:mcp    # MCP App のみ → dist/mcp-app.html
+pnpm build:web    # Web UI のみ  → dist/web.html
 ```
 
 ## 起動
@@ -115,8 +119,6 @@ curl -s -X POST http://localhost:3001/api/submit \
 
 ### 2. ローカルで MCP エンドポイントを確認
 
-サーバー起動後、以下のコマンドで動作を確認できます。
-
 ```bash
 # ヘルスチェック
 curl http://localhost:3001/health
@@ -132,30 +134,11 @@ curl -s -X POST http://localhost:3001/mcp \
   -H "Content-Type: application/json" \
   -H "Accept: application/json, text/event-stream" \
   -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"show_survey","arguments":{}}}' | jq .
-
-# 回答を送信
-curl -s -X POST http://localhost:3001/mcp \
-  -H "Content-Type: application/json" \
-  -H "Accept: application/json, text/event-stream" \
-  -d '{
-    "jsonrpc":"2.0","id":3,"method":"tools/call",
-    "params":{
-      "name":"submit_response",
-      "arguments":{
-        "responses":[
-          {"questionId":"primary_lang","answer":"TypeScript"},
-          {"questionId":"frameworks","answer":["React","Hono"]},
-          {"questionId":"satisfaction","answer":"5"},
-          {"questionId":"comment","answer":"MCP Apps すごい！"}
-        ]
-      }
-    }
-  }' | jq '.result.content[0].text | fromjson | .totalResponses'
 ```
 
-### 2. basic-host でローカル確認
+### 3. basic-host でローカル確認（Claude 不要）
 
-[ext-apps の basic-host](https://github.com/modelcontextprotocol/ext-apps/tree/main/examples/basic-host) を使うと、Claude なしでブラウザ上で UI をレンダリングできます。
+[ext-apps の basic-host](https://github.com/modelcontextprotocol/ext-apps/tree/main/examples/basic-host) を使うと、Claude なしでブラウザ上で MCP App UI をレンダリングできます。
 
 ```bash
 git clone https://github.com/modelcontextprotocol/ext-apps.git
@@ -165,9 +148,9 @@ SERVERS='["http://localhost:3001/mcp"]' npm start
 # → http://localhost:8080 を開いて show_survey を呼び出す
 ```
 
-### 3. Claude.ai / Claude Desktop で確認
+### 4. Claude Desktop で確認
 
-Claude.ai（有料プラン）または Claude Desktop から接続するには、ローカルサーバーをインターネットに公開する必要があります。
+ローカルサーバーをインターネットに公開してから接続します。
 
 ```bash
 # cloudflared でトンネルを作成
@@ -175,22 +158,31 @@ npx cloudflared tunnel --url http://localhost:3001
 # → https://xxxxx.trycloudflare.com が発行される
 ```
 
-**Claude.ai の場合:**  
-設定 → コネクター → カスタムコネクターを追加 → 発行された URL の末尾に `/mcp` を付けて登録。
-
-**Claude Desktop の場合 (`~/.claude/claude_desktop_config.json`):**
+`~/.claude/claude_desktop_config.json` に以下を追加:
 
 ```json
 {
   "mcpServers": {
-    "survey-app": {
-      "url": "https://xxxxx.trycloudflare.com/mcp"
+    "mcp-survey-app": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://xxxxx.trycloudflare.com/mcp"
+      ]
     }
   }
 }
 ```
 
-登録後、Claude に「アンケートを表示して」と話しかけると UI が表示されます。
+> **Note:** Claude Desktop の `mcpServers` は stdio ベースのサーバーのみ受け付けます。  
+> `mcp-remote` が HTTP ↔ stdio のブリッジとして機能するため、`url` を直接指定する形式は使えません。
+
+Claude Desktop を再起動後、「アンケートを表示して」と話しかけると UI が表示されます。
+
+### 5. Claude.ai で確認
+
+設定 → コネクター → カスタムコネクターを追加 → トンネル URL の末尾に `/mcp` を付けて登録。  
+（有料プランが必要です）
 
 ## lint / format
 
