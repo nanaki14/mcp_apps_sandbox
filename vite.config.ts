@@ -7,6 +7,7 @@ export default defineConfig({
   plugins: [react(), tailwindcss(), viteSingleFile()],
   build: {
     outDir: "dist",
+    emptyOutDir: false,
     rollupOptions: {
       input: process.env.INPUT,
     },
