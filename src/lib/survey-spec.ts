@@ -204,7 +204,19 @@ export function buildSurveySpec(data: SurveySpecInput): Spec {
 
 // ─── Dashboard spec (analytics-only, no form) ─────────────────────────────────
 
-export function buildDashboardSpec(data: SurveySpecInput): Spec {
+export type DashboardSection = "metrics" | "lang" | "frameworks" | "rating";
+
+export const ALL_DASHBOARD_SECTIONS: DashboardSection[] = [
+  "metrics",
+  "lang",
+  "frameworks",
+  "rating",
+];
+
+export function buildDashboardSpec(
+  data: SurveySpecInput,
+  sections: DashboardSection[] = ALL_DASHBOARD_SECTIONS,
+): Spec {
   const { survey, results, totalResponses } = data;
 
   const qLang = survey.questions.find((q) => q.id === "primary_lang");
@@ -218,12 +230,22 @@ export function buildDashboardSpec(data: SurveySpecInput): Spec {
   const avgRating = rSat ? calcAvgRating(rSat.answers) : 0;
   const topLang = rLang ? calcTopAnswer(rLang.answers) : "—";
 
+  const showMetrics = sections.includes("metrics");
+  const showLang = sections.includes("lang");
+  const showFw = sections.includes("frameworks");
+  const showRating = sections.includes("rating");
+
   const chartsChildren: string[] = [
-    rLang && "chart-lang",
-    rLang && rFw && "divider-charts-1",
-    rFw && "chart-fw",
-    (rFw || rLang) && rSat && "divider-charts-2",
-    rSat && "chart-rating",
+    rLang && showLang && "chart-lang",
+    rLang && showLang && rFw && showFw && "divider-charts-1",
+    rFw && showFw && "chart-fw",
+    ((rLang && showLang) || (rFw && showFw)) && rSat && showRating && "divider-charts-2",
+    rSat && showRating && "chart-rating",
+  ].filter(Boolean) as string[];
+
+  const rootChildren: string[] = [
+    showMetrics && "metrics",
+    chartsChildren.length > 0 && "charts",
   ].filter(Boolean) as string[];
 
   return {
@@ -232,7 +254,7 @@ export function buildDashboardSpec(data: SurveySpecInput): Spec {
       root: {
         type: "DashboardLayout",
         props: {},
-        children: ["metrics", "charts"],
+        children: rootChildren,
       },
       metrics: {
         type: "MetricsRow",

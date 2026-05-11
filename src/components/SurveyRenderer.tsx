@@ -11,6 +11,7 @@ interface SurveyRendererProps {
 }
 
 export function SurveyRenderer({ spec, onSubmit }: SurveyRendererProps) {
+  console.log({spec});
   const onSubmitRef = useRef(onSubmit);
   useEffect(() => {
     onSubmitRef.current = onSubmit;

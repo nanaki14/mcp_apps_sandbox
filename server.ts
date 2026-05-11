@@ -12,7 +12,12 @@ import {
 } from "@modelcontextprotocol/ext-apps/server";
 import { Hono } from "hono";
 import { getRequestListener } from "@hono/node-server";
-import { buildSurveySpec, buildDashboardSpec } from "./src/lib/survey-spec.js";
+import {
+  buildSurveySpec,
+  buildDashboardSpec,
+  ALL_DASHBOARD_SECTIONS,
+  type DashboardSection,
+} from "./src/lib/survey-spec.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -65,8 +70,8 @@ let totalResponses = 0;
 const toSurveySpecPayload = () =>
   JSON.stringify({ spec: buildSurveySpec({ survey, results, totalResponses }) });
 
-const toDashboardSpecPayload = () =>
-  JSON.stringify({ spec: buildDashboardSpec({ survey, results, totalResponses }) });
+const toDashboardSpecPayload = (sections?: DashboardSection[]) =>
+  JSON.stringify({ spec: buildDashboardSpec({ survey, results, totalResponses }, sections) });
 
 // ─── MCP Server ──────────────────────────────────────────────────────────────
 
@@ -97,11 +102,17 @@ registerAppTool(
   {
     title: "ダッシュボードを表示",
     description:
-      "回答データのアナリティクスダッシュボードを表示します。メトリクスカードとチャートで集計結果を視覚化します。",
+      "回答データのアナリティクスダッシュボードを表示します。sections で表示するセクションを絞り込めます（metrics: 集計カード、lang: 言語チャート、frameworks: FWチャート、rating: 満足度チャート）。",
+    inputSchema: {
+      sections: z
+        .array(z.enum(["metrics", "lang", "frameworks", "rating"]))
+        .optional()
+        .describe("表示するセクション。省略時は全セクション表示"),
+    },
     _meta: { ui: { resourceUri } },
   },
-  async () => ({
-    content: [{ type: "text", text: toDashboardSpecPayload() }],
+  async ({ sections }: { sections?: DashboardSection[] }) => ({
+    content: [{ type: "text", text: toDashboardSpecPayload(sections) }],
   }),
 );
 
@@ -164,9 +175,15 @@ honoApp.get("/api/survey", (c) =>
   c.json({ spec: buildSurveySpec({ survey, results, totalResponses }) }),
 );
 
-honoApp.get("/api/dashboard", (c) =>
-  c.json({ spec: buildDashboardSpec({ survey, results, totalResponses }) }),
-);
+honoApp.get("/api/dashboard", (c) => {
+  const raw = c.req.query("sections");
+  const sections = raw
+    ? (raw.split(",").filter((s) =>
+        ALL_DASHBOARD_SECTIONS.includes(s as DashboardSection),
+      ) as DashboardSection[])
+    : undefined;
+  return c.json({ spec: buildDashboardSpec({ survey, results, totalResponses }, sections) });
+});
 
 honoApp.post("/api/submit", async (c) => {
   const { responses } = await c.req.json<{
